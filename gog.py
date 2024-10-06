@@ -91,10 +91,12 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
         "q": query,
         "key": google_api_key,
         "maxResults": 10,
-        "langRestrict": "fr,de,en"  # Restrict to French, German, and English
+        "langRestrict": "fr,de,en"
     }
-    response = requests.get(base_url, params=params)
-    if response.status_code == 200:
+    try:
+        response = requests.get(base_url, params=params)
+        response.raise_for_status()  # This will raise an HTTPError for bad responses
+        
         data = response.json()
         books = []
         for item in data.get('items', []):
@@ -104,10 +106,7 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
             link = volume_info.get('infoLink', '#')
             language = volume_info.get('language', 'unknown')
 
-            # Check if the author is Charles Baudelaire
             is_baudelaire_author = any("baudelaire" in author.lower() for author in authors)
-
-            # Check if the title contains problematic terms
             problematic_title_keywords = [
                 "les fleurs du mal",
                 "gesammelte werke",
@@ -127,15 +126,22 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
                     gpt_comment = get_gpt_comment(book_info, gedicht_title, gedicht_text, gpt_api_key)
                     books.append(f"[{title} von {', '.join(authors)}]({link}) - {gpt_comment}")
                 except Exception as e:
-                    st.error(f"Error generating comment for book: {title}. Error: {str(e)}")
+                    st.warning(f"Couldn't generate comment for book: {title}. Error: {str(e)}")
 
-        # Sort: French first, then German, then English
         books.sort(key=lambda x: ('en' in x, 'de' in x, 'fr' in x))
-        return books[:5]  # Limit to 5 recommendations
-    else:
-        st.error(f"Error fetching related books. Status code: {response.status_code}")
-        return ["Error fetching related books"]
-
+        return books[:5]
+    
+    except requests.exceptions.HTTPError as http_err:
+        if response.status_code == 403:
+            st.error("Error 403: Access denied. Please check if your Google Books API key is valid and has the necessary permissions.")
+            st.info("To fix this:\n1. Verify your API key in the Google Cloud Console.\n2. Ensure the Books API is enabled for your project.\n3. Check if you've exceeded your daily quota.")
+        else:
+            st.error(f"HTTP error occurred: {http_err}")
+    except Exception as err:
+        st.error(f"An error occurred: {err}")
+    
+    return ["Error fetching related books"]
+    
 def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
