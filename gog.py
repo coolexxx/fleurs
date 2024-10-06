@@ -90,6 +90,32 @@ import urllib.parse
 import streamlit as st
 import json
 
+def test_google_books_api(api_key):
+    test_url = "https://www.googleapis.com/books/v1/volumes"
+    test_query = urllib.parse.quote("python programming")
+    test_params = {
+        "q": test_query,
+        "key": api_key,
+        "maxResults": 1,
+        "country": "DE"
+    }
+    try:
+        response = requests.get(test_url, params=test_params)
+        response.raise_for_status()
+        data = response.json()
+        if 'items' in data and len(data['items']) > 0:
+            st.success("API Key is working correctly!")
+            return True
+        else:
+            st.warning("API request successful, but no books returned. Check your query.")
+            return False
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"HTTP error occurred: {http_err}")
+        st.error(f"Response content: {response.text}")
+    except Exception as err:
+        st.error(f"An error occurred: {err}")
+    return False
+
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
     base_url = "https://www.googleapis.com/books/v1/volumes"
     
