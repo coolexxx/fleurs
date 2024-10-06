@@ -242,8 +242,7 @@ def main():
         with st.spinner("Suche läuft..."):
             time.sleep(1)
             st.session_state.results = search_gedichte(query, gedichte)
-        elif 'results' in st.session_state:
-            st.write("Kein Gedicht gefunden.")
+
 
     def random_poem():
         with st.spinner("Gedicht wird ausgewählt..."):
