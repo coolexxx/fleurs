@@ -265,7 +265,9 @@ def main():
             fr_text, de_text = st.session_state.results[index]
         else:
             fr_text, de_text = st.session_state.results[0]
-
+        elif 'results' in st.session_state:
+            st.write("Kein Gedicht gefunden.")
+            
         fr_title, fr_body = format_gedicht(fr_text)
         de_title, de_body = format_gedicht(de_text)
 
