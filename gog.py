@@ -59,19 +59,6 @@ def search_gedichte(query, gedichte):
     return results
 
 def get_interpretation(text, focus, api_key):
-    # Implement your get_interpretation function here
-    pass
-
-def format_gedicht(gedicht_text):
-    soup = BeautifulSoup(gedicht_text, 'html.parser')
-    title = soup.find('h4').text.strip() if soup.find('h4') else ''
-    strophen = []
-    for p in soup.find_all('p', class_='vers'):
-        strophe = [line.strip() for line in p.stripped_strings]
-        strophen.append(strophe)
-    return title, strophen
-
-def get_interpretation(text, focus, api_key):
     url = "https://api.openai.com/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -89,6 +76,42 @@ def get_interpretation(text, focus, api_key):
         return response.json()['choices'][0]['message']['content']
     else:
         return "Fehler bei der API-Anfrage"
+    pass
+
+def format_gedicht(gedicht_text):
+    soup = BeautifulSoup(gedicht_text, 'html.parser')
+    title = soup.find('h4').text.strip() if soup.find('h4') else ''
+    strophen = []
+    for p in soup.find_all('p', class_='vers'):
+        strophe = [line.strip() for line in p.stripped_strings]
+        strophen.append(strophe)
+    return title, strophen
+
+def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
+    fr_html = f"<h3 style='text-align: center; color: #8B0000; margin-bottom: 20px;'>{fr_title}</h3>"
+    for strophe in fr_strophen:
+        fr_html += "<p style='margin-bottom: 20px;'>"
+        for line in strophe:
+            fr_html += f"{line}<br>"
+        fr_html += "</p>"
+
+    de_html = f"<h3 style='text-align: center; color: #8B0000; margin-bottom: 20px;'>{de_title}</h3>"
+    for strophe in de_strophen:
+        de_html += "<p style='margin-bottom: 20px;'>"
+        for line in strophe:
+            de_html += f"{line}<br>"
+        de_html += "</p>"
+
+    st.markdown(f"""
+    <div style="display: flex; justify-content: space-between;">
+        <div style="width: 48%; background-color: #FFEBEB; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);">
+            {fr_html}
+        </div>
+        <div style="width: 48%; background-color: #FFE0E0; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);">
+            {de_html}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     pass
 
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
