@@ -281,8 +281,6 @@ if 'results' in st.session_state and st.session_state.results:
         fr_text, de_text = st.session_state.results[index]
     else:
         fr_text, de_text = st.session_state.results[0]
-        print("Keine Gedichte gefunden.")
-
 
         fr_title, fr_body = format_gedicht(fr_text)
         de_title, de_body = format_gedicht(de_text)
@@ -308,6 +306,10 @@ if 'results' in st.session_state and st.session_state.results:
                 interpretation = get_interpretation(fr_text, focus, DUMM_API_KEY)
             st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
             st.session_state['last_focus'] = focus
+
+else:
+    st.write("Keine Gedichte gefunden.")  # Füge hier die Nachricht hinzu, wenn keine Gedichte gefunden werden.
+
 
 
     st.markdown('</div>', unsafe_allow_html=True)
