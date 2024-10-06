@@ -244,57 +244,54 @@ def main():
             st.session_state.results = search_gedichte(query, gedichte)
 
 
-    def random_poem():
-        with st.spinner("Gedicht wird ausgewählt..."):
-            time.sleep(1)
-            st.session_state.results = [random.choice(gedichte)]
+def random_poem():
+    with st.spinner("Gedicht wird ausgewählt..."):
+        time.sleep(1)
+        st.session_state.results = [random.choice(gedichte)]
 
-    if search_button or (query and st.session_state.search_input != st.session_state.get('last_search', '')):
-        search()
-        st.session_state['last_search'] = query
-    if random_button:
-        random_poem()
+if search_button or (query and st.session_state.search_input != st.session_state.get('last_search', '')):
+    search()
+    st.session_state['last_search'] = query
+if random_button:
+    random_poem()
 
-    st.markdown('<div class="content">', unsafe_allow_html=True)
+st.markdown('<div class="content">', unsafe_allow_html=True)
 
-    if 'results' in st.session_state and st.session_state.results:
-        if len(st.session_state.results) > 1:
-            options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
-            selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
-            index = options.index(selected_gedicht)
-            fr_text, de_text = st.session_state.results[index]
-        else:
-            fr_text, de_text = st.session_state.results[0]
-        elif 'results' in st.session_state:
-            st.write("Kein Gedicht gefunden.")
-            
-        fr_title, fr_body = format_gedicht(fr_text)
-        de_title, de_body = format_gedicht(de_text)
+if 'results' in st.session_state and st.session_state.results:
+    if len(st.session_state.results) > 1:
+        options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
+        selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
+        index = options.index(selected_gedicht)
+        fr_text, de_text = st.session_state.results[index]
+    else:
+        fr_text, de_text = st.session_state.results[0]
+    
+    fr_title, fr_body = format_gedicht(fr_text)
+    de_title, de_body = format_gedicht(de_text)
+    
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        display_gedicht(fr_title, fr_body, de_title, de_body)
+    with col2:
+        st.markdown("<h3 style='color: #8B0000;'>Infos und Glossar</h3>", unsafe_allow_html=True)
+        with st.spinner("Infos und Glossar werden erstellt..."):
+            glossary = get_glossary(fr_text, DUMM_API_KEY)
+        st.markdown(f"<div class='vocab-box'>{glossary}</div>", unsafe_allow_html=True)
+    
+    # Interpretation section
+    st.markdown("<h3 style='color: #8B0000;'>Interpretation</h3>", unsafe_allow_html=True)
+    focus = st.text_input(
+        "Worauf soll sich die Interpretation des obigen Gedichts konzentrieren?",
+        key="focus_input")
+    if st.button("Interpretation anzeigen", key="interpret_button") or (focus and focus != st.session_state.get('last_focus', '')):
+        with st.spinner("Interpretation wird erstellt..."):
+            interpretation = get_interpretation(fr_text, focus, DUMM_API_KEY)
+        st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
+        st.session_state['last_focus'] = focus
+elif 'results' in st.session_state:
+    st.write("Kein Gedicht gefunden.")
 
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            display_gedicht(fr_title, fr_body, de_title, de_body)
-
-        with col2:
-            st.markdown("<h3 style='color: #8B0000;'>Infos und Glossar</h3>", unsafe_allow_html=True)
-            with st.spinner("Infos und Glossar werden erstellt..."):
-                glossary = get_glossary(fr_text, DUMM_API_KEY)
-            st.markdown(f"<div class='vocab-box'>{glossary}</div>", unsafe_allow_html=True)
-
-        # Interpretation section
-        st.markdown("<h3 style='color: #8B0000;'>Interpretation</h3>", unsafe_allow_html=True)
-        focus = st.text_input(
-            "Worauf soll sich die Interpretation des obigen Gedichts konzentrieren?",
-            key="focus_input")
-
-        if st.button("Interpretation anzeigen", key="interpret_button") or (focus and focus != st.session_state.get('last_focus', '')):
-            with st.spinner("Interpretation wird erstellt..."):
-                interpretation = get_interpretation(fr_text, focus, DUMM_API_KEY)
-            st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
-            st.session_state['last_focus'] = focus
-
-
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("""
         <style>
