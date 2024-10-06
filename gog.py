@@ -114,54 +114,6 @@ def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     else:
         return "Es konnte kein Kommentar für dieses Buch generiert werden."
 
-def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
-    base_url = "https://www.googleapis.com/books/v1/volumes"
-    params = {
-        "q": query,
-        "key": google_api_key,
-        "maxResults": 10
-    }
-    response = requests.get(base_url, params=params)
-    if response.status_code == 200:
-        data = response.json()
-        books = []
-        for item in data.get('items', []):
-            volume_info = item.get('volumeInfo', {})
-            title = volume_info.get('title', 'Unknown Title')
-            authors = volume_info.get('authors', ['Unknown Author'])
-            link = volume_info.get('infoLink', '#')
-            language = volume_info.get('language', 'unknown')
-
-            # Überprüfung, ob der Autor Charles Baudelaire ist
-            is_baudelaire_author = any("baudelaire" in author.lower() for author in authors)
-
-            # Überprüfung, ob der Titel problematische Begriffe enthält
-            problematic_title_keywords = [
-                "les fleurs du mal von charles baudelaire",
-                "gesammelte werke",
-                "oeuvres complètes",
-                "zweisprachige",
-                "les fleurs du mal et autres poèmes von charles baudelaire",
-                "les fleurs du mal, spleen et idéal von charles baudelaire"
-            ]
-            has_problematic_title = any(keyword in title.lower() for keyword in problematic_title_keywords)
-
-            if not is_baudelaire_author and not has_problematic_title:
-                book_info = {
-                    'title': title,
-                    'authors': authors,
-                    'language': language
-                }
-                gpt_comment = get_gpt_comment(book_info, gedicht_title, gedicht_text, gpt_api_key)
-                books.append(f"[{title} von {', '.join(authors)}]({link}) - {gpt_comment}")
-
-        # Sortieren: Französisch zuerst, dann Deutsch, dann Englisch
-        books.sort(key=lambda x: ('en' in x, 'de' in x, 'fr' in x))
-        return books[:5]  # Begrenzen auf 5 Empfehlungen
-    else:
-        return ["Error fetching related books"]
-
-
 def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
     fr_html = f"<h3 style='text-align: center; color: #8B0000; margin-bottom: 20px;'>{fr_title}</h3>"
     for strophe in fr_strophen:
@@ -277,19 +229,6 @@ def main():
             with st.spinner("Infos und Glossar werden erstellt..."):
                 glossary = get_glossary(fr_text, DUMM_API_KEY)
             st.markdown(f"<div class='vocab-box'>{glossary}</div>", unsafe_allow_html=True)
-
-        # Check if we need to load related books
-        if 'current_poem' not in st.session_state or st.session_state.current_poem != fr_title:
-            st.session_state.current_poem = fr_title
-            with st.spinner("Verwandte Literatur wird gesucht..."):
-                st.session_state.related_books = get_related_books(f"Charles Baudelaire {fr_title}", GOOGLE_BOOKS_API_KEY, DUMM_API_KEY, fr_title, fr_text)
-
-        # Display related books
-        st.markdown("<h3 style='color: #8B0000;'>Verwandte Literatur</h3>", unsafe_allow_html=True)
-        st.markdown("<div class='vocab-box'>", unsafe_allow_html=True)
-        for book in st.session_state.related_books:
-            st.markdown(f"- {book}", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
         # Interpretation section
         st.markdown("<h3 style='color: #8B0000;'>Interpretation</h3>", unsafe_allow_html=True)
