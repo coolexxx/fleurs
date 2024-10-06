@@ -273,14 +273,17 @@ def main():
 
     st.markdown('<div class="content">', unsafe_allow_html=True)
 
-    if 'results' in st.session_state and st.session_state.results:
-        if len(st.session_state.results) > 1:
-            options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
-            selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
-            index = options.index(selected_gedicht)
-            fr_text, de_text = st.session_state.results[index]
-        else:
-            fr_text, de_text = st.session_state.results[0]
+if 'results' in st.session_state and st.session_state.results:
+    if len(st.session_state.results) > 1:
+        options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
+        selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
+        index = options.index(selected_gedicht)
+        fr_text, de_text = st.session_state.results[index]
+    else:
+        fr_text, de_text = st.session_state.results[0]
+else:
+    st.write("Keine Gedichte gefunden.")
+
 
         fr_title, fr_body = format_gedicht(fr_text)
         de_title, de_body = format_gedicht(de_text)
@@ -307,8 +310,6 @@ def main():
             st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
             st.session_state['last_focus'] = focus
 
-        elif 'results' in st.session_state:
-            st.write("Kein Gedicht gefunden.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
