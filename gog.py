@@ -190,7 +190,7 @@ def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
 
 
 def main():
-    if 'results' not in st.session_state:
+if 'results' not in st.session_state:
     st.session_state.results = []
 if 'related_books' not in st.session_state:
     st.session_state.related_books = []
