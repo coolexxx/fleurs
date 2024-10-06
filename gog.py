@@ -88,11 +88,11 @@ def format_gedicht(gedicht_text):
 import requests
 import urllib.parse
 import streamlit as st
+import json
 
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
     base_url = "https://www.googleapis.com/books/v1/volumes"
     
-    # URL encode the query
     encoded_query = urllib.parse.quote(query)
     
     params = {
@@ -100,14 +100,18 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
         "key": google_api_key,
         "maxResults": 10,
         "langRestrict": "fr,de,en",
-        "country": "DE"  # Add country parameter, adjust if necessary
+        "country": "DE"
     }
     
     try:
+        st.info(f"Sending request to Google Books API with query: {encoded_query}")
         response = requests.get(base_url, params=params)
         response.raise_for_status()
         
         data = response.json()
+        st.success("Successfully received response from Google Books API")
+        st.json(data)  # Display the raw API response for debugging
+        
         books = []
         for item in data.get('items', []):
             volume_info = item.get('volumeInfo', {})
@@ -115,6 +119,8 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
             authors = volume_info.get('authors', ['Unknown Author'])
             link = volume_info.get('infoLink', '#')
             language = volume_info.get('language', 'unknown')
+
+            st.info(f"Processing book: {title}")
 
             is_baudelaire_author = any("baudelaire" in author.lower() for author in authors)
             problematic_title_keywords = [
@@ -135,8 +141,11 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
                 try:
                     gpt_comment = get_gpt_comment(book_info, gedicht_title, gedicht_text, gpt_api_key)
                     books.append(f"[{title} von {', '.join(authors)}]({link}) - {gpt_comment}")
+                    st.success(f"Added book to list: {title}")
                 except Exception as e:
                     st.warning(f"Couldn't generate comment for book: {title}. Error: {str(e)}")
+            else:
+                st.info(f"Skipped book due to filtering: {title}")
 
         books.sort(key=lambda x: ('en' in x, 'de' in x, 'fr' in x))
         return books[:5]
@@ -144,43 +153,10 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
     except requests.exceptions.HTTPError as http_err:
         st.error(f"HTTP error occurred: {http_err}")
         st.error(f"Response content: {response.text}")
-        if "unknownLocation" in response.text:
-            st.error("The API is unable to determine your location. This may be due to API key restrictions or network settings.")
-            st.info("Try adding a 'country' parameter to your API key in the Google Cloud Console.")
     except Exception as err:
         st.error(f"An error occurred: {err}")
     
     return ["Error fetching related books"]
-
-def test_google_books_api(api_key):
-    test_url = "https://www.googleapis.com/books/v1/volumes"
-    test_query = urllib.parse.quote("python programming")
-    test_params = {
-        "q": test_query,
-        "key": api_key,
-        "maxResults": 1,
-        "country": "DE"  # Add country parameter, adjust if necessary
-    }
-    try:
-        response = requests.get(test_url, params=test_params)
-        response.raise_for_status()
-        data = response.json()
-        if 'items' in data and len(data['items']) > 0:
-            st.success("API Key is working correctly!")
-            return True
-        else:
-            st.warning("API request successful, but no books returned. Check your query.")
-            return False
-    except requests.exceptions.HTTPError as http_err:
-        st.error(f"HTTP error occurred: {http_err}")
-        st.error(f"Response content: {response.text}")
-        if "unknownLocation" in response.text:
-            st.error("The API is unable to determine your location. This may be due to API key restrictions or network settings.")
-            st.info("Try adding a 'country' parameter to your API key in the Google Cloud Console.")
-    except Exception as err:
-        st.error(f"An error occurred: {err}")
-    return False
-    
     
 def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     url = "https://api.openai.com/v1/chat/completions"
