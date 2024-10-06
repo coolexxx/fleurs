@@ -85,17 +85,25 @@ def format_gedicht(gedicht_text):
     return title, strophen
 
 
+import requests
+import urllib.parse
+
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
     base_url = "https://www.googleapis.com/books/v1/volumes"
+    
+    # URL encode the query
+    encoded_query = urllib.parse.quote(query)
+    
     params = {
-        "q": query,
+        "q": encoded_query,
         "key": google_api_key,
         "maxResults": 10,
         "langRestrict": "fr,de,en"
     }
+    
     try:
         response = requests.get(base_url, params=params)
-        response.raise_for_status()  # This will raise an HTTPError for bad responses
+        response.raise_for_status()
         
         data = response.json()
         books = []
@@ -132,15 +140,37 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
         return books[:5]
     
     except requests.exceptions.HTTPError as http_err:
-        if response.status_code == 403:
-            st.error("Error 403: Access denied. Please check if your Google Books API key is valid and has the necessary permissions.")
-            st.info("To fix this:\n1. Verify your API key in the Google Cloud Console.\n2. Ensure the Books API is enabled for your project.\n3. Check if you've exceeded your daily quota.")
-        else:
-            st.error(f"HTTP error occurred: {http_err}")
+        st.error(f"HTTP error occurred: {http_err}")
+        st.error(f"Response content: {response.text}")
     except Exception as err:
         st.error(f"An error occurred: {err}")
     
     return ["Error fetching related books"]
+
+def test_google_books_api(api_key):
+    test_url = "https://www.googleapis.com/books/v1/volumes"
+    test_query = urllib.parse.quote("python programming")
+    test_params = {
+        "q": test_query,
+        "key": api_key,
+        "maxResults": 1
+    }
+    try:
+        response = requests.get(test_url, params=test_params)
+        response.raise_for_status()
+        data = response.json()
+        if 'items' in data and len(data['items']) > 0:
+            st.success("API Key is working correctly!")
+            return True
+        else:
+            st.warning("API request successful, but no books returned. Check your query.")
+            return False
+    except requests.exceptions.HTTPError as http_err:
+        st.error(f"HTTP error occurred: {http_err}")
+        st.error(f"Response content: {response.text}")
+    except Exception as err:
+        st.error(f"An error occurred: {err}")
+    return False
     
 def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     url = "https://api.openai.com/v1/chat/completions"
@@ -199,6 +229,10 @@ def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
 
 
 def main():
+    if st.button("Test Google Books API"):
+    api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
+    test_google_books_api(api_key)
+    
     st.markdown("""
     <style>
     .title-container {
