@@ -190,6 +190,11 @@ def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
 
 
 def main():
+    if 'results' not in st.session_state:
+    st.session_state.results = []
+if 'related_books' not in st.session_state:
+    st.session_state.related_books = []
+    
     st.markdown("""
     <style>
     .title-container {
@@ -303,8 +308,6 @@ def main():
             st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
             st.session_state['last_focus'] = focus
 
-        elif 'results' in st.session_state:
-            st.write("Kein Gedicht gefunden.")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
