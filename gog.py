@@ -28,7 +28,27 @@ def parse_gedichte(file_path):
     return gedichte
 
 def get_glossary(text, api_key):
-    # Implement your get_glossary function here
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system",
+             "content": "Erstelle eine kurze Zusammenfassung (max. 2 Sätze) und liste dann die 5 wichtigsten oder schwierigsten Vokabeln mit knappen Erklärungen auf."},
+            {"role": "user", "content": text}
+        ]
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        content = response.json()['choices'][0]['message']['content']
+        # Füge einen sichtbaren Absatz zwischen Zusammenfassung und Glossar ein
+        content = content.replace("\n\n", "\n\n<hr>\n\n", 1)
+        return content
+    else:
+        return "Fehler bei der API-Anfrage"
     pass
 
 def search_gedichte(query, gedichte):
@@ -51,8 +71,24 @@ def format_gedicht(gedicht_text):
         strophen.append(strophe)
     return title, strophen
 
-def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
-    # Implement your display_gedicht function here
+def get_interpretation(text, focus, api_key):
+    url = "https://api.openai.com/v1/chat/completions"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    data = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {"role": "system", "content": f"Interpretiere den folgenden Text unter besonderer Berücksichtigung von: {focus}"},
+            {"role": "user", "content": text}
+        ]
+    }
+    response = requests.post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        return response.json()['choices'][0]['message']['content']
+    else:
+        return "Fehler bei der API-Anfrage"
     pass
 
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
