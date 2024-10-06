@@ -114,6 +114,54 @@ def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     else:
         return "Es konnte kein Kommentar für dieses Buch generiert werden."
 
+def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
+    base_url = "https://www.googleapis.com/books/v1/volumes"
+    params = {
+        "q": query,
+        "key": google_api_key,
+        "maxResults": 10
+    }
+    response = requests.get(base_url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        books = []
+        for item in data.get('items', []):
+            volume_info = item.get('volumeInfo', {})
+            title = volume_info.get('title', 'Unknown Title')
+            authors = volume_info.get('authors', ['Unknown Author'])
+            link = volume_info.get('infoLink', '#')
+            language = volume_info.get('language', 'unknown')
+
+            # Überprüfung, ob der Autor Charles Baudelaire ist
+            is_baudelaire_author = any("baudelaire" in author.lower() for author in authors)
+
+            # Überprüfung, ob der Titel problematische Begriffe enthält
+            problematic_title_keywords = [
+                "les fleurs du mal von charles baudelaire",
+                "gesammelte werke",
+                "oeuvres complètes",
+                "zweisprachige",
+                "les fleurs du mal et autres poèmes von charles baudelaire",
+                "les fleurs du mal, spleen et idéal von charles baudelaire"
+            ]
+            has_problematic_title = any(keyword in title.lower() for keyword in problematic_title_keywords)
+
+            if not is_baudelaire_author and not has_problematic_title:
+                book_info = {
+                    'title': title,
+                    'authors': authors,
+                    'language': language
+                }
+                gpt_comment = get_gpt_comment(book_info, gedicht_title, gedicht_text, gpt_api_key)
+                books.append(f"[{title} von {', '.join(authors)}]({link}) - {gpt_comment}")
+
+        # Sortieren: Französisch zuerst, dann Deutsch, dann Englisch
+        books.sort(key=lambda x: ('en' in x, 'de' in x, 'fr' in x))
+        return books[:5]  # Begrenzen auf 5 Empfehlungen
+    else:
+        return ["Error fetching related books"]
+
+
 def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
     fr_html = f"<h3 style='text-align: center; color: #8B0000; margin-bottom: 20px;'>{fr_title}</h3>"
     for strophe in fr_strophen:
@@ -206,81 +254,16 @@ def main():
     if random_button:
         random_poem()
 
-def main():
-    st.markdown("""
-    <style>
-    .title-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-    .title-container img {
-        width: 50px; 
-        height: auto; 
-        margin-left: 10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<h1 style='text-align: center; color: #8B0000;'>Les Fleurs du Mal</h1>", unsafe_allow_html=True)
-
-    # Titel und Bilder
-    image_path = "baud.webp"
-    with open(image_path, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read()).decode()
-
-    st.markdown(f"""
-    <div class="title-container">
-        <h2 style='text-align: center; font-size: 1.5em; color: #4a4a4a;'>Entdecke die Poesie von Charles Baudelaire</h2>
-        <img src="data:image/webp;base64,{encoded_string}" alt="Charles Baudelaire">
-    </div>
-    """, unsafe_allow_html=True)
-
-    gedichte = parse_gedichte("gut.txt")
-
-    st.markdown(
-        '<p style="font-size: 0.7em; color: #8B0000; margin-top: 5px;">Einige Inhalte auf dieser Seite werden von einer KI verarbeitet. Bitte überprüfe wichtige Informationen immer mit zuverlässigen Quellen! Siehe hierzu bspw. auch: <a href="https://www.ku.de/die-ku/organisation/personalentwicklung-und-weiterbildung/wissenschaftliches-personal/hochschuldidaktik/ki-und-hochschullehre">KI an der KU</a> </p>',
-        unsafe_allow_html=True)
-
-    st.markdown('<div class="search-container">', unsafe_allow_html=True)
-    query = st.text_input("Gib den Titel oder Text ein, um ein Gedicht zu finden:", key="search_input")
-
-    col1, col2, col3 = st.columns([1, 1, 2])
-    with col1:
-        search_button = st.button("Suchen", key="search", type="primary")
-    with col2:
-        random_button = st.button("Zufälliges Gedicht", key="random", type="secondary")
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
-
-    def search():
-        with st.spinner("Suche läuft..."):
-            time.sleep(1)
-            st.session_state.results = search_gedichte(query, gedichte)
-
-    def random_poem():
-        with st.spinner("Gedicht wird ausgewählt..."):
-            time.sleep(1)
-            st.session_state.results = [random.choice(gedichte)]
-
-    if search_button or (query and st.session_state.search_input != st.session_state.get('last_search', '')):
-        search()
-        st.session_state['last_search'] = query
-    if random_button:
-        random_poem()
-
     st.markdown('<div class="content">', unsafe_allow_html=True)
 
-if 'results' in st.session_state and st.session_state.results:
-    if len(st.session_state.results) > 1:
-        options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
-        selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
-        index = options.index(selected_gedicht)
-        fr_text, de_text = st.session_state.results[index]
-    else:
-        fr_text, de_text = st.session_state.results[0]
+    if 'results' in st.session_state and st.session_state.results:
+        if len(st.session_state.results) > 1:
+            options = [BeautifulSoup(fr_text, 'html.parser').find('h4').text.strip() for fr_text, _ in st.session_state.results]
+            selected_gedicht = st.selectbox("Mehrere Gedichte gefunden. Bitte wählen Sie eines aus:", options)
+            index = options.index(selected_gedicht)
+            fr_text, de_text = st.session_state.results[index]
+        else:
+            fr_text, de_text = st.session_state.results[0]
 
         fr_title, fr_body = format_gedicht(fr_text)
         de_title, de_body = format_gedicht(de_text)
@@ -295,6 +278,19 @@ if 'results' in st.session_state and st.session_state.results:
                 glossary = get_glossary(fr_text, DUMM_API_KEY)
             st.markdown(f"<div class='vocab-box'>{glossary}</div>", unsafe_allow_html=True)
 
+        # Check if we need to load related books
+        if 'current_poem' not in st.session_state or st.session_state.current_poem != fr_title:
+            st.session_state.current_poem = fr_title
+            with st.spinner("Verwandte Literatur wird gesucht..."):
+                st.session_state.related_books = get_related_books(f"Charles Baudelaire {fr_title}", GOOGLE_BOOKS_API_KEY, DUMM_API_KEY, fr_title, fr_text)
+
+        # Display related books
+        st.markdown("<h3 style='color: #8B0000;'>Verwandte Literatur</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='vocab-box'>", unsafe_allow_html=True)
+        for book in st.session_state.related_books:
+            st.markdown(f"- {book}", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
         # Interpretation section
         st.markdown("<h3 style='color: #8B0000;'>Interpretation</h3>", unsafe_allow_html=True)
         focus = st.text_input(
@@ -307,13 +303,10 @@ if 'results' in st.session_state and st.session_state.results:
             st.markdown(f"<div style='background-color: #FFE0E0; padding: 20px; border-radius: 10px;'>{interpretation}</div>", unsafe_allow_html=True)
             st.session_state['last_focus'] = focus
 
-else:
-    st.write("Keine Gedichte gefunden.")  # Füge hier die Nachricht hinzu, wenn keine Gedichte gefunden werden.
-
-
+        elif 'results' in st.session_state:
+            st.write("Kein Gedicht gefunden.")
 
     st.markdown('</div>', unsafe_allow_html=True)
-
 
     st.markdown("""
         <style>
