@@ -206,6 +206,71 @@ def main():
     if random_button:
         random_poem()
 
+def main():
+    st.markdown("""
+    <style>
+    .title-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .title-container img {
+        width: 50px; 
+        height: auto; 
+        margin-left: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<h1 style='text-align: center; color: #8B0000;'>Les Fleurs du Mal</h1>", unsafe_allow_html=True)
+
+    # Titel und Bilder
+    image_path = "baud.webp"
+    with open(image_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+
+    st.markdown(f"""
+    <div class="title-container">
+        <h2 style='text-align: center; font-size: 1.5em; color: #4a4a4a;'>Entdecke die Poesie von Charles Baudelaire</h2>
+        <img src="data:image/webp;base64,{encoded_string}" alt="Charles Baudelaire">
+    </div>
+    """, unsafe_allow_html=True)
+
+    gedichte = parse_gedichte("gut.txt")
+
+    st.markdown(
+        '<p style="font-size: 0.7em; color: #8B0000; margin-top: 5px;">Einige Inhalte auf dieser Seite werden von einer KI verarbeitet. Bitte überprüfe wichtige Informationen immer mit zuverlässigen Quellen! Siehe hierzu bspw. auch: <a href="https://www.ku.de/die-ku/organisation/personalentwicklung-und-weiterbildung/wissenschaftliches-personal/hochschuldidaktik/ki-und-hochschullehre">KI an der KU</a> </p>',
+        unsafe_allow_html=True)
+
+    st.markdown('<div class="search-container">', unsafe_allow_html=True)
+    query = st.text_input("Gib den Titel oder Text ein, um ein Gedicht zu finden:", key="search_input")
+
+    col1, col2, col3 = st.columns([1, 1, 2])
+    with col1:
+        search_button = st.button("Suchen", key="search", type="primary")
+    with col2:
+        random_button = st.button("Zufälliges Gedicht", key="random", type="secondary")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    def search():
+        with st.spinner("Suche läuft..."):
+            time.sleep(1)
+            st.session_state.results = search_gedichte(query, gedichte)
+
+    def random_poem():
+        with st.spinner("Gedicht wird ausgewählt..."):
+            time.sleep(1)
+            st.session_state.results = [random.choice(gedichte)]
+
+    if search_button or (query and st.session_state.search_input != st.session_state.get('last_search', '')):
+        search()
+        st.session_state['last_search'] = query
+    if random_button:
+        random_poem()
+
     st.markdown('<div class="content">', unsafe_allow_html=True)
 
     if 'results' in st.session_state and st.session_state.results:
@@ -246,6 +311,7 @@ def main():
             st.write("Kein Gedicht gefunden.")
 
     st.markdown('</div>', unsafe_allow_html=True)
+
 
     st.markdown("""
         <style>
