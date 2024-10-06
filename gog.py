@@ -87,6 +87,7 @@ def format_gedicht(gedicht_text):
 
 import requests
 import urllib.parse
+import streamlit as st
 
 def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht_text):
     base_url = "https://www.googleapis.com/books/v1/volumes"
@@ -98,7 +99,8 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
         "q": encoded_query,
         "key": google_api_key,
         "maxResults": 10,
-        "langRestrict": "fr,de,en"
+        "langRestrict": "fr,de,en",
+        "country": "DE"  # Add country parameter, adjust if necessary
     }
     
     try:
@@ -142,6 +144,9 @@ def get_related_books(query, google_api_key, gpt_api_key, gedicht_title, gedicht
     except requests.exceptions.HTTPError as http_err:
         st.error(f"HTTP error occurred: {http_err}")
         st.error(f"Response content: {response.text}")
+        if "unknownLocation" in response.text:
+            st.error("The API is unable to determine your location. This may be due to API key restrictions or network settings.")
+            st.info("Try adding a 'country' parameter to your API key in the Google Cloud Console.")
     except Exception as err:
         st.error(f"An error occurred: {err}")
     
@@ -153,7 +158,8 @@ def test_google_books_api(api_key):
     test_params = {
         "q": test_query,
         "key": api_key,
-        "maxResults": 1
+        "maxResults": 1,
+        "country": "DE"  # Add country parameter, adjust if necessary
     }
     try:
         response = requests.get(test_url, params=test_params)
@@ -168,9 +174,13 @@ def test_google_books_api(api_key):
     except requests.exceptions.HTTPError as http_err:
         st.error(f"HTTP error occurred: {http_err}")
         st.error(f"Response content: {response.text}")
+        if "unknownLocation" in response.text:
+            st.error("The API is unable to determine your location. This may be due to API key restrictions or network settings.")
+            st.info("Try adding a 'country' parameter to your API key in the Google Cloud Console.")
     except Exception as err:
         st.error(f"An error occurred: {err}")
     return False
+    
     
 def get_gpt_comment(book_info, gedicht_title, gedicht_text, api_key):
     url = "https://api.openai.com/v1/chat/completions"
