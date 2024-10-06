@@ -281,8 +281,7 @@ if 'results' in st.session_state and st.session_state.results:
         fr_text, de_text = st.session_state.results[index]
     else:
         fr_text, de_text = st.session_state.results[0]
-else:
-    st.write("Keine Gedichte gefunden.")
+        print("Keine Gedichte gefunden.")
 
 
         fr_title, fr_body = format_gedicht(fr_text)
