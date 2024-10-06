@@ -229,10 +229,6 @@ def display_gedicht(fr_title, fr_strophen, de_title, de_strophen):
 
 
 def main():
-    if st.button("Test Google Books API"):
-    api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
-    test_google_books_api(api_key)
-    
     st.markdown("""
     <style>
     .title-container {
@@ -251,7 +247,7 @@ def main():
 
     st.markdown("<h1 style='text-align: center; color: #8B0000;'>Les Fleurs du Mal</h1>", unsafe_allow_html=True)
 
-    # Titel und Bilder
+    # Title and images
     image_path = "baud.webp"
     with open(image_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode()
@@ -268,6 +264,10 @@ def main():
     st.markdown(
         '<p style="font-size: 0.7em; color: #8B0000; margin-top: 5px;">Einige Inhalte auf dieser Seite werden von einer KI verarbeitet. Bitte überprüfe wichtige Informationen immer mit zuverlässigen Quellen! Siehe hierzu bspw. auch: <a href="https://www.ku.de/die-ku/organisation/personalentwicklung-und-weiterbildung/wissenschaftliches-personal/hochschuldidaktik/ki-und-hochschullehre">KI an der KU</a> </p>',
         unsafe_allow_html=True)
+
+    if st.button("Test Google Books API"):
+        api_key = st.secrets["GOOGLE_BOOKS_API_KEY"]
+        test_google_books_api(api_key)
 
     st.markdown('<div class="search-container">', unsafe_allow_html=True)
     query = st.text_input("Gib den Titel oder Text ein, um ein Gedicht zu finden:", key="search_input")
