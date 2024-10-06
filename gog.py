@@ -278,19 +278,6 @@ def main():
                 glossary = get_glossary(fr_text, DUMM_API_KEY)
             st.markdown(f"<div class='vocab-box'>{glossary}</div>", unsafe_allow_html=True)
 
-        # Check if we need to load related books
-        if 'current_poem' not in st.session_state or st.session_state.current_poem != fr_title:
-            st.session_state.current_poem = fr_title
-            with st.spinner("Verwandte Literatur wird gesucht..."):
-                st.session_state.related_books = get_related_books(f"Charles Baudelaire {fr_title}", GOOGLE_BOOKS_API_KEY, DUMM_API_KEY, fr_title, fr_text)
-
-        # Display related books
-        st.markdown("<h3 style='color: #8B0000;'>Verwandte Literatur</h3>", unsafe_allow_html=True)
-        st.markdown("<div class='vocab-box'>", unsafe_allow_html=True)
-        for book in st.session_state.related_books:
-            st.markdown(f"- {book}", unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-
         # Interpretation section
         st.markdown("<h3 style='color: #8B0000;'>Interpretation</h3>", unsafe_allow_html=True)
         focus = st.text_input(
@@ -328,7 +315,7 @@ def main():
         }
         </style>
         <div class='footer'>
-            © C. Baudelaire | Übers.: T. Robinson | Project Gutenberg | gpt-4o-mini | Google Books | Made with ❤ by Alex
+            © C. Baudelaire | Übers.: T. Robinson | Project Gutenberg | gpt-4o-mini | Made by Alex
         </div>
     """, unsafe_allow_html=True)
 
