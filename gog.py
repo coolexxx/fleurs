@@ -291,7 +291,6 @@ if 'results' in st.session_state and st.session_state.results:
 elif 'results' in st.session_state:
     st.write("Kein Gedicht gefunden.")
 
-st.markdown('</div>', unsafe_allow_html=True)
 
     st.markdown("""
         <style>
